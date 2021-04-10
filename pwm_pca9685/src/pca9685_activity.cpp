@@ -14,10 +14,15 @@ namespace pwm_pca9685 {
 PCA9685Activity::PCA9685Activity(ros::NodeHandle &_nh, ros::NodeHandle &_nh_priv) :
   nh(_nh), nh_priv(_nh_priv) {
     ROS_INFO("initializing");
-    nh_priv.param("device", param_device, (std::string)"/dev/i2c-1");
+    nh_priv.param("device", param_device, (std::string)"/dev/i2c-8");
     nh_priv.param("address", param_address, (int)PCA9685_ADDRESS);
-    nh_priv.param("frequency", param_frequency, (int)1600);
+    nh_priv.param("frequency", param_frequency, (int)50);
     nh_priv.param("frame_id", param_frame_id, (std::string)"imu");
+    
+    
+    ROS_INFO("device: %s", param_device.c_str());
+    ROS_INFO("address: %d", param_address);
+    ROS_INFO("frequency: %d", param_frequency);
     
     // timeouts in milliseconds per channel
     nh_priv.param("timeout", param_timeout, std::vector<int>{
@@ -193,20 +198,28 @@ bool PCA9685Activity::stop() {
 void PCA9685Activity::onCommand(const std_msgs::Int32MultiArrayPtr &msg) {
     ros::Time time = ros::Time::now();
     uint64_t t = 1000 * (uint64_t)time.sec + (uint64_t)time.nsec / 1e6;
-
+		
     if(msg->data.size() != 16) {
         ROS_ERROR("array is not have a size of 16");
         return;
     }
 
     for(int channel = 0; channel < 16; channel++) {
-      if(msg->data[channel] < 0) continue;
+      if(msg->data[channel] < 0) 
+      {
+      	//ROS_INFO("Channel %d has negative data.", channel);
+      	continue;
+      }
+      
 
       if(msg->data[channel] != last_data[channel]) {
           last_change_times[channel] = t;
       }
 
-      if(msg->data[channel] == last_data[channel] && param_timeout[channel]) continue;
+      if(msg->data[channel] == last_data[channel] && param_timeout[channel]) 
+      {	
+      	continue;
+      }
 
       if(msg->data[channel] > param_pwm_max[channel]) {
 	  set(channel, param_pwm_max[channel]);

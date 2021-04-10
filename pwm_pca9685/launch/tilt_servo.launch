@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+	<node pkg="pwm_pca9685" type="pca9685_node" name="pca9685_node" output="screen">
+		<rosparam command="load" file="$(find pwm_pca9685)/launch/tilt_servo.yaml"/>
+	</node>
+</launch>
